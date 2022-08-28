@@ -1,0 +1,10 @@
+[package]
+name = "bubas-os"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+uefi = { version="0.16", features=["alloc", "logger"] }
+uefi-services = "0.13"
+log = "0.4"
+ucs2 = "0.3"
