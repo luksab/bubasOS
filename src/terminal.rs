@@ -1,11 +1,19 @@
-use alloc::string::String;
+use crate::{
+    fs::crawl_tree,
+    print, println,
+    utils::{get_handle, get_systable},
+    SYSTEM_TABLE,
+};
+use alloc::{string::String, vec::Vec};
 use log::info;
 use uefi::{
     proto::console::text::{Input, Key, ScanCode},
     table::runtime::ResetType,
 };
-
-use crate::{print, println, utils::get_systable, SYSTEM_TABLE};
+use uefi::{
+    proto::media::file::{File, FileAttribute, FileMode, FileType},
+    CStr16,
+};
 
 const PROMPT: &str = "> ";
 
@@ -53,6 +61,7 @@ fn read_line(keyboard: &mut Input) -> Result<String, uefi::Error> {
 
 pub fn run(keyboard: &mut Input) -> Result<(), uefi::Error> {
     println!("Welcome to Bubas OS!");
+    let start_time = get_systable().runtime_services().get_time().unwrap();
     loop {
         print!("{}", PROMPT);
         let line = read_line(keyboard)?;
@@ -68,7 +77,6 @@ pub fn run(keyboard: &mut Input) -> Result<(), uefi::Error> {
                     .reset(ResetType::Shutdown, uefi::Status(0), None)
             }
             "uptime" => {
-                let start_time = get_systable().runtime_services().get_time().unwrap();
                 let time = get_systable().runtime_services().get_time().unwrap();
                 let diff_years = time.year() - start_time.year();
                 let diff_months = time.month() - start_time.month();
@@ -94,11 +102,22 @@ pub fn run(keyboard: &mut Input) -> Result<(), uefi::Error> {
                     diff_years, diff_months, diff_days, diff_hours, diff_minutes, diff_seconds
                 );
             }
-            "ls" => {
-                println!("Here be files");
-            }
+            "ls" => ls(),
             _ => {}
         }
     }
     Ok(())
+}
+
+fn ls() {
+    let system_table = get_systable();
+
+
+    let mut fs = system_table
+        .boot_services()
+        .get_image_file_system(get_handle().clone())
+        .expect("Could not get image file system");
+
+    let mut root = fs.open_volume().expect("Could not open volume");
+    crawl_tree(&mut root);
 }

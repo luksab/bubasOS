@@ -5,6 +5,7 @@ extern crate alloc;
 
 mod print;
 mod utils;
+mod fs;
 mod terminal;
 
 use log::info;
@@ -14,9 +15,10 @@ use uefi_services::{init, system_table};
 use crate::utils::sleep;
 
 static mut SYSTEM_TABLE: Option<SystemTable<Boot>> = None;
+static mut SYSTEM_HANDLE: Option<Handle> = None;
 
 #[entry]
-fn efi_main(_image: Handle, mut sys_table: SystemTable<Boot>) -> Status {
+fn efi_main(handle: Handle, mut sys_table: SystemTable<Boot>) -> Status {
     init(&mut sys_table).unwrap();
 
     // Disable the watchdog timer
@@ -27,6 +29,10 @@ fn efi_main(_image: Handle, mut sys_table: SystemTable<Boot>) -> Status {
 
     unsafe {
         SYSTEM_TABLE = Some(sys_table.unsafe_clone());
+    }
+
+    unsafe {
+        SYSTEM_HANDLE = Some(handle);
     }
 
     let protocol = unsafe {
@@ -41,9 +47,9 @@ fn efi_main(_image: Handle, mut sys_table: SystemTable<Boot>) -> Status {
 
     info!("Starting Bubas OS...");
 
-    sys_table.stdout().clear()?;
+    sys_table.stdout().clear().unwrap();
 
-    terminal::run(keyboard)?;
+    terminal::run(keyboard).unwrap();
 
     info!("Exiting Bubas OS...");
 

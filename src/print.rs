@@ -18,7 +18,7 @@ macro_rules! println {
     ($($arg:tt)*) => {
         unsafe {
             use core::fmt::Write;
-            let stdout = SYSTEM_TABLE
+            let stdout = crate::SYSTEM_TABLE
                 .as_mut()
                 .expect("The system table handle is not available")
                 .stdout();
